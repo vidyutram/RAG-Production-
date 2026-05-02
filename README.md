@@ -22,7 +22,7 @@ cp .env.example .env  # add your OpenAI API key
 docker-compose up --build
 
 ## Endpoints
-POST /ingest — chunk and index a document
-POST /query — retrieve and generate answer
-POST /query/stream — streaming answer generation
-GET /health — health check
+ingest — chunk and index a document
+query — retrieve and generate answer
+query/stream — streaming answer generation
+health — health check
