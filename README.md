@@ -19,10 +19,14 @@ A fully containerized Retrieval Augmented Generation API built with FastAPI, Qdr
 
 ## Running locally
 cp .env.example .env  # add your OpenAI API key
+
 docker-compose up --build
 
 ## Endpoints
--ingest — chunk and index a document
--query — retrieve and generate answer
--query/stream — streaming answer generation
--health — health check
+- ingest  chunk and index a document
+- 
+- query — retrieve and generate answer
+- 
+- query/stream — streaming answer generation
+- 
+- health — health check
