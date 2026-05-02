@@ -24,9 +24,9 @@ docker-compose up --build
 
 ## Endpoints
 - ingest  chunk and index a document
-- 
+  
 - query — retrieve and generate answer
-- 
+  
 - query/stream — streaming answer generation
-- 
+  
 - health — health check
