@@ -4,3 +4,8 @@ openai
 qdrant-client
 pydantic-settings
 httpx vx
+ragas
+langsmith
+langfuse
+langchain-openai
+datasets

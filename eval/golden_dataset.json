@@ -1,0 +1,33 @@
+[
+    {
+        "id": "q001",
+        "question": "What is retrieval augmented generation?",
+        "answer": "Retrieval augmented generation combines a retrieval system with a language model to ground responses in retrieved documents.",
+        "contexts": [
+            "Retrieval Augmented Generation (RAG) combines information retrieval with language model generation.",
+            "RAG was introduced to solve the knowledge cutoff problem in LLMs by grounding responses in retrieved documents."
+        ],
+        "ground_truth": "RAG retrieves relevant documents and uses them as context for an LLM to generate grounded, accurate responses.",
+        "category": "concept"
+    },
+    {
+        "id": "q002",
+        "question": "What is the purpose of chunking in RAG?",
+        "answer": "Chunking splits documents into smaller pieces so they fit within context windows and improve retrieval precision.",
+        "contexts": [
+            "Chunking is the process of splitting documents into smaller segments before indexing. This improves retrieval granularity and ensures chunks fit within LLM context windows."
+        ],
+        "ground_truth": "Chunking splits documents into smaller segments to improve retrieval precision and ensure content fits within LLM context windows.",
+        "category": "concept"
+    },
+    {
+        "id": "q003",
+        "question": "What is cosine similarity used for in RAG?",
+        "answer": "Cosine similarity measures the angle between two vectors. In RAG it finds the most relevant chunks by comparing query and chunk embeddings.",
+        "contexts": [
+            "Cosine similarity measures the cosine of the angle between two vectors in a high dimensional space."
+        ],
+        "ground_truth": "Cosine similarity measures similarity between query and chunk embeddings to retrieve the most relevant chunks.",
+        "category": "concept"
+    }
+]
