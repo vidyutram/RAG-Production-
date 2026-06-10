@@ -5,8 +5,8 @@ from app.config import settings
 from app.models import ChunkResult
 
 qdrant_client = AsyncQdrantClient(
-    host=settings.qdrant_host,
-    port=settings.qdrant_port,
+    url=f"https://{settings.qdrant_host}",
+    api_key=settings.qdrant_api_key.get_secret_value() if settings.qdrant_api_key else None,
 )
 
 async def retrieve_chunk(question:str, top_k:int, source_filter:str | None = None):

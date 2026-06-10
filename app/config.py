@@ -3,6 +3,7 @@ from pydantic import SecretStr
 
 class Settings(BaseSettings):
     openai_api_key : SecretStr
+    qdrant_api_key: SecretStr | None = None
     qdrant_host : str = "qdrant" 
     qdrant_port : int = 6333
     collection_name : str = "documents"

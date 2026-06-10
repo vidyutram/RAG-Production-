@@ -5,8 +5,8 @@ import asyncio, uuid
 from app.utils import get_embedding
 
 qdrant_client = AsyncQdrantClient(
-    host=settings.qdrant_host,
-    port=settings.qdrant_port,
+    url=f"https://{settings.qdrant_host}",
+    api_key=settings.qdrant_api_key.get_secret_value() if settings.qdrant_api_key else None,
 )
 
 def chunk_text(text: str, chunk_size:int, chunk_overlap:int):
