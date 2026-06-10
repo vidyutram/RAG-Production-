@@ -4,7 +4,6 @@ groq
 qdrant-client
 pydantic-settings
 httpx
-sentence-transformers
 ragas
 langsmith
 langfuse

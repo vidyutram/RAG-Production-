@@ -3,11 +3,12 @@ from pydantic import SecretStr
 
 class Settings(BaseSettings):
     groq_api_key: SecretStr
+    jina_api_key: SecretStr
     qdrant_host: str = "qdrant"
     qdrant_api_key: SecretStr | None = None
     collection_name: str = "documents"
-    embedding_model: str = "all-MiniLM-L6-v2"
-    embedding_dim: int = 384
+    embedding_model: str = "jina-embeddings-v2-base-en"
+    embedding_dim: int = 768
     chat_model: str = "llama-3.1-8b-instant"
     chunk_size: int = 512
     chunk_overlap: int = 50
