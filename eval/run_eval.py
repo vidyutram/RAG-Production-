@@ -1,6 +1,6 @@
 import asyncio
-from pipeline.eval_pipeline import run_pipeline
-from pipeline.regression import load_eval_results, compare_runs, print_regression_report
+from eval.pipeline.eval_pipeline import run_pipeline
+from eval.pipeline.regression import load_eval_results, compare_runs, print_regression_report
 
 GOLDEN_DATASET_PATH = "eval/golden_dataset.json"
 TOLERANCE = 0.05

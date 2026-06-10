@@ -1,11 +1,7 @@
-from app.config import settings
-from openai import AsyncOpenAI
+from sentence_transformers import SentenceTransformer
 
-client = AsyncOpenAI(api_key = settings.openai_api_key)
+model = SentenceTransformer("all-MiniLM-L6-v2")
 
-async def get_embedding(text : str):
-    response = await client.embeddings.create(
-    model = settings.embedding_model,
-    input = text,
-    )
-    return response.data[0].embedding
+async def get_embedding(text: str) -> list[float]:
+    embedding = model.encode(text, convert_to_numpy=True)
+    return embedding.tolist()

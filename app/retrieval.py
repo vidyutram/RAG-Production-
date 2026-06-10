@@ -9,7 +9,7 @@ qdrant_client = AsyncQdrantClient(
     api_key=settings.qdrant_api_key.get_secret_value() if settings.qdrant_api_key else None,
 )
 
-async def retrieve_chunk(question:str, top_k:int, source_filter:str | None = None):
+async def retrieve_chunks(question: str, top_k: int, source_filter: str | None = None):
     query_vector = await get_embedding(question)
 
     search_filter = None
@@ -17,26 +17,27 @@ async def retrieve_chunk(question:str, top_k:int, source_filter:str | None = Non
         search_filter = Filter(
             must=[
                 FieldCondition(
-                    key= "source",
-                    match= MatchValue(value = source_filter)
+                    key="source",
+                    match=MatchValue(value=source_filter)
                 )
             ]
         )
-        results = await qdrant_client.search(
-            collection_name = settings.collection_name,
-            query_vector= query_vector,
-            limit = top_k,
-            query_filter = source_filter,
-            with_payload = True,
-            score_thresehold = settings.score_threshold
-        )
 
-        return[
-            ChunkResult(
-                text = r.payload["text"],
-                source =r.payload["source"],
-                score = r.score,
-                metadata=r.payload.get("metadata")
-            )
-            for r in results
-        ]
+    results = await qdrant_client.search(
+        collection_name=settings.collection_name,
+        query_vector=query_vector,
+        limit=top_k,
+        query_filter=search_filter,
+        with_payload=True,
+        score_threshold=settings.score_threshold
+    )
+
+    return [
+        ChunkResult(
+            text=r.payload["text"],
+            source=r.payload["source"],
+            score=r.score,
+            metadata=r.payload.get("metadata")
+        )
+        for r in results
+    ]

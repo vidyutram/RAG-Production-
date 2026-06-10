@@ -1,9 +1,10 @@
 fastapi
 uvicorn
-openai
+groq
 qdrant-client
 pydantic-settings
-httpx vx
+httpx
+sentence-transformers
 ragas
 langsmith
 langfuse
