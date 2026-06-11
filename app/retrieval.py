@@ -25,12 +25,12 @@ async def retrieve_chunks(question: str, top_k: int, source_filter: str | None =
 
     results = await qdrant_client.query_points(
         collection_name=settings.collection_name,
-        query_vector=query_vector,
+        query=query_vector,
         limit=top_k,
         query_filter=search_filter,
         with_payload=True,
         score_threshold=settings.score_threshold
-    )
+)
 
     return [
         ChunkResult(
