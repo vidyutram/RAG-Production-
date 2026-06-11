@@ -78,10 +78,12 @@ app_telegram.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_
 @app.on_event("startup")
 async def startup():
     await app_telegram.initialize()
+    await app_telegram.start()
     await bot.set_webhook(url=f"{WEBHOOK_URL}/webhook")
 
 @app.on_event("shutdown")
 async def shutdown():
+    await app_telegram.stop()
     await app_telegram.shutdown()
 
 @app.post("/webhook")
