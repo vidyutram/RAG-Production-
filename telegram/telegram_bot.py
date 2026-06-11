@@ -1,9 +1,23 @@
 import os
+import asyncio
 import httpx
+from threading import Thread
+from fastapi import FastAPI
+import uvicorn
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 
 RAG_API_URL = os.environ["RAG_API_URL"]
+
+# minimal health check so Render doesn't kill the service
+health_app = FastAPI()
+
+@health_app.get("/")
+def health():
+    return {"status": "ok"}
+
+def run_health_server():
+    uvicorn.run(health_app, host="0.0.0.0", port=8000)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
@@ -62,6 +76,11 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Use /query <question> to ask something, or /ingest <source> to add a document.")
 
 if __name__ == "__main__":
+    # run health server in a background thread
+    thread = Thread(target=run_health_server, daemon=True)
+    thread.start()
+
+    # run telegram bot in main thread
     token = os.environ["TELEGRAM_BOT_TOKEN"]
     app = ApplicationBuilder().token(token).build()
     app.add_handler(CommandHandler("start", start))
