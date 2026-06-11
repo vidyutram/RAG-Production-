@@ -68,4 +68,4 @@ if __name__ == "__main__":
     app.add_handler(CommandHandler("ingest", ingest_command))
     app.add_handler(CommandHandler("query", query_command))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
-    app.run_polling()
+    app.run_polling(drop_pending_updates=True, allowed_updates=Update.ALL_TYPES)
