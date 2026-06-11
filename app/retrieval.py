@@ -23,7 +23,7 @@ async def retrieve_chunks(question: str, top_k: int, source_filter: str | None =
             ]
         )
 
-    results = await qdrant_client.search(
+    results = await qdrant_client.query_points(
         collection_name=settings.collection_name,
         query_vector=query_vector,
         limit=top_k,
@@ -39,5 +39,5 @@ async def retrieve_chunks(question: str, top_k: int, source_filter: str | None =
             score=r.score,
             metadata=r.payload.get("metadata")
         )
-        for r in results
+        for r in results.points
     ]
