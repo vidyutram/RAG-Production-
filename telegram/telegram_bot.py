@@ -1,20 +1,17 @@
 import os
-import json
 import httpx
 from fastapi import FastAPI, Request
-from telegram import Update, Bot
+from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
 
 RAG_API_URL = os.environ["RAG_API_URL"]
 TELEGRAM_BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
 WEBHOOK_URL = os.environ["WEBHOOK_URL"]
 
-bot = Bot(token=TELEGRAM_BOT_TOKEN)
-app_telegram = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
-
 app = FastAPI()
-
 pending_ingest = {}
+
+ptb = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
 
 async def start(update: Update, context):
     await update.message.reply_text(
@@ -70,27 +67,27 @@ async def handle_text(update: Update, context):
     else:
         await update.message.reply_text("Use /query <question> to ask something, or /ingest <source> to add a document.")
 
-app_telegram.add_handler(CommandHandler("start", start))
-app_telegram.add_handler(CommandHandler("ingest", ingest_command))
-app_telegram.add_handler(CommandHandler("query", query_command))
-app_telegram.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
+ptb.add_handler(CommandHandler("start", start))
+ptb.add_handler(CommandHandler("ingest", ingest_command))
+ptb.add_handler(CommandHandler("query", query_command))
+ptb.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
 
 @app.on_event("startup")
 async def startup():
-    await app_telegram.initialize()
-    await app_telegram.start()
-    await bot.set_webhook(url=f"{WEBHOOK_URL}/webhook")
+    await ptb.initialize()
+    await ptb.start()
+    await ptb.bot.set_webhook(url=f"{WEBHOOK_URL}/webhook")
 
 @app.on_event("shutdown")
 async def shutdown():
-    await app_telegram.stop()
-    await app_telegram.shutdown()
+    await ptb.stop()
+    await ptb.shutdown()
 
 @app.post("/webhook")
 async def webhook(request: Request):
     data = await request.json()
-    update = Update.de_json(data, bot)
-    await app_telegram.process_update(update)
+    update = Update.de_json(data, ptb.bot)
+    await ptb.process_update(update)
     return {"ok": True}
 
 @app.get("/health")
