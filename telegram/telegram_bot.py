@@ -22,6 +22,7 @@ async def start(update: Update, context):
         "Commands:\n"
         "/ingest <source_name> — then send your document text as the next message\n"
         "/query <your question> — get an answer from ingested documents"
+        "/query <question> | <source> — search a specific document"
     )
 
 async def ingest_command(update: Update, context):
@@ -34,15 +35,29 @@ async def ingest_command(update: Update, context):
 
 async def query_command(update: Update, context):
     if not context.args:
-        await update.message.reply_text("Usage: /query <your question>")
+        await update.message.reply_text("Usage: /query <question> or /query <question> | <source>")
         return
-    question = " ".join(context.args)
+    
+    full_input = " ".join(context.args)
+    
+    if "|" in full_input:
+        parts = full_input.split("|", 1)
+        question = parts[0].strip()
+        source_filter = parts[1].strip()
+    else:
+        question = full_input
+        source_filter = None
+
     await update.message.reply_text("Searching...")
     async with httpx.AsyncClient(timeout=30) as client:
         try:
+            payload = {"question": question, "top_k": 5}
+            if source_filter:
+                payload["source_filter"] = source_filter
+
             response = await client.post(
                 f"{RAG_API_URL}/query",
-                json={"question": question, "top_k": 5}
+                json=payload
             )
             if response.status_code == 404:
                 await update.message.reply_text("No relevant documents found. Try ingesting something first.")
@@ -51,7 +66,6 @@ async def query_command(update: Update, context):
                 await update.message.reply_text(data["answer"])
         except Exception as e:
             await update.message.reply_text(f"Error: {str(e)}")
-
 async def handle_text(update: Update, context):
     user_id = update.effective_user.id
     if user_id in pending_ingest:
