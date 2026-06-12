@@ -2,6 +2,9 @@ import os
 import httpx
 from fastapi import FastAPI, Request
 from telegram import Update
+import io
+import PyPDF2
+import docx
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
 
 RAG_API_URL = os.environ["RAG_API_URL"]
@@ -67,10 +70,59 @@ async def handle_text(update: Update, context):
     else:
         await update.message.reply_text("Use /query <question> to ask something, or /ingest <source> to add a document.")
 
+async def handle_document(update: Update, context):
+    user_id = update.effective_user.id
+    
+    if user_id not in pending_ingest:
+        await update.message.reply_text("Send /ingest <source_name> first before uploading a document.")
+        return
+
+    source = pending_ingest.pop(user_id)
+    file = await update.message.document.get_file()
+    file_name = update.message.document.file_name.lower()
+
+    await update.message.reply_text("Downloading and extracting text...")
+
+    file_bytes = await file.download_as_bytearray()
+    buffer = io.BytesIO(bytes(file_bytes))
+
+    try:
+        if file_name.endswith(".pdf"):
+            reader = PyPDF2.PdfReader(buffer)
+            text = "\n".join(
+                page.extract_text() for page in reader.pages if page.extract_text()
+            )
+        elif file_name.endswith(".txt"):
+            text = buffer.read().decode("utf-8")
+        elif file_name.endswith(".docx"):
+            doc = docx.Document(buffer)
+            text = "\n".join(para.text for para in doc.paragraphs if para.text.strip())
+        else:
+            await update.message.reply_text("File not supported. Please send a PDF, TXT, or DOCX file.")
+            pending_ingest[user_id] = source
+            return
+
+        if not text.strip():
+            await update.message.reply_text("Could not extract any text from the file. Try a different file.")
+            return
+
+        await update.message.reply_text(f"Extracted {len(text.split())} words. Ingesting...")
+
+        async with httpx.AsyncClient(timeout=60) as client:
+            await client.post(
+                f"{RAG_API_URL}/ingest",
+                json={"text": text, "source": source}
+            )
+        await update.message.reply_text(f"Ingestion started for source '{source}'.")
+
+    except Exception as e:
+        await update.message.reply_text(f"Error processing file: {str(e)}")
+
 ptb.add_handler(CommandHandler("start", start))
 ptb.add_handler(CommandHandler("ingest", ingest_command))
 ptb.add_handler(CommandHandler("query", query_command))
 ptb.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
+ptb.add_handler(MessageHandler(filters.Document.ALL, handle_document))
 
 @app.on_event("startup")
 async def startup():
