@@ -20,6 +20,11 @@ async def ingest(request: IngestRequest, background_tasks: BackgroundTasks):
     background_tasks.add_task(ingest_document, request.text, request.source, request.metadata)
     return {"status": "ingestion started", "source":request.source}
 
+@app.post("/ingest/sync")
+async def ingest_sync(request: IngestRequest):
+    await ingest_document(request.text, request.source, request.metadata)
+    return {"status": "ingestion complete", "source": request.source}
+
 @app.post("/query")
 async def query(request: QueryRequest):
     results = await retrieve_chunks(

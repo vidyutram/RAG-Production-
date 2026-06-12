@@ -120,14 +120,14 @@ async def handle_document(update: Update, context):
             await update.message.reply_text("Could not extract any text from the file. Try a different file.")
             return
 
-        await update.message.reply_text(f"Extracted {len(text.split())} words. Ingesting...")
+        await update.message.reply_text(f"Extracted {len(text.split())} words. Ingesting... this may take 30-60 seconds.")
 
-        async with httpx.AsyncClient(timeout=60) as client:
+        async with httpx.AsyncClient(timeout=120) as client:
             await client.post(
-                f"{RAG_API_URL}/ingest",
+                f"{RAG_API_URL}/ingest/sync",
                 json={"text": text, "source": source}
             )
-        await update.message.reply_text(f"Ingestion started for source '{source}'.")
+        await update.message.reply_text(f"Ingestion complete for source '{source}'. You can now query it.")
 
     except Exception as e:
         await update.message.reply_text(f"Error processing file: {str(e)}")
