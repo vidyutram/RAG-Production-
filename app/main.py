@@ -46,10 +46,11 @@ async def query(request: QueryRequest):
     answer = await generate_answer(request.question, results, memories, short_term_turns)
 
     if request.user_id:
-        store_short_term(request.user_id, request.question, answer)
+        await store_short_term(request.user_id, request.question, answer)
         asyncio.create_task(store_memory(request.user_id, request.question, answer, "general"))
 
     return QueryResponse(question=request.question, chunks_used=results, answer=answer)
+
 
 @app.post("/query/stream")
 async def query_stream(request: QueryRequest):
@@ -64,8 +65,9 @@ async def query_stream(request: QueryRequest):
     short_term_turns = []
     memories = []
     if request.user_id:
-        await store_short_term(request.user_id, request.question, answer)
-        asyncio.create_task(store_memory(request.user_id, request.question, answer, "general"))
+        short_term_turns = await get_short_term(request.user_id)
+        memories = await retrieve_memories(request.user_id, request.question)
+
     return StreamingResponse(
         generate_answer_streaming(request.question, results, memories, short_term_turns),
         media_type="text/event-stream"
