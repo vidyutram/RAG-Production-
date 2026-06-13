@@ -8,9 +8,10 @@ class IngestRequest(BaseModel):
     model_config = {"extra": "forbid"}
 
 class QueryRequest(BaseModel):
-    question : str 
-    source_filter: Optional[str]= None
-    top_k : int = Field(le =20, ge = 1, default= 5)
+    question: str
+    source_filter: Optional[str] = None
+    top_k: int = Field(le=20, ge=1, default=5)
+    user_id: Optional[str] = None
     model_config = {"extra": "forbid"}
 
 class ChunkResult(BaseModel):
@@ -21,6 +22,6 @@ class ChunkResult(BaseModel):
     model_config = {"extra": "forbid"}
 
 class QueryResponse(BaseModel):
-    question : str
-    chunks_used : list[ChunkResult]
+    question: str
+    chunks_used: list[ChunkResult]
     answer: str

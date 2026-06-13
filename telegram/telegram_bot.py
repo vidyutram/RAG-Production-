@@ -1,10 +1,11 @@
 import os
-import httpx
-from fastapi import FastAPI, Request
-from telegram import Update
 import io
+import asyncio
+import httpx
 import PyPDF2
 import docx
+from fastapi import FastAPI, Request
+from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
 
 RAG_API_URL = os.environ["RAG_API_URL"]
@@ -20,8 +21,8 @@ async def start(update: Update, context):
     await update.message.reply_text(
         "Welcome to the RAG bot.\n\n"
         "Commands:\n"
-        "/ingest <source_name> — then send your document text as the next message\n"
-        "/query <your question> — get an answer from ingested documents"
+        "/ingest <source_name> — then upload a PDF, TXT, or DOCX file\n"
+        "/query <question> — search all documents\n"
         "/query <question> | <source> — search a specific document"
     )
 
@@ -31,15 +32,16 @@ async def ingest_command(update: Update, context):
         return
     source = " ".join(context.args)
     pending_ingest[update.effective_user.id] = source
-    await update.message.reply_text(f"Got it. Now send the document text you want to ingest under source '{source}'.")
+    await update.message.reply_text(f"Got it. Now upload a PDF, TXT, or DOCX file for source '{source}'.")
 
 async def query_command(update: Update, context):
     if not context.args:
         await update.message.reply_text("Usage: /query <question> or /query <question> | <source>")
         return
-    
+
     full_input = " ".join(context.args)
-    
+    user_id = str(update.effective_user.id)
+
     if "|" in full_input:
         parts = full_input.split("|", 1)
         question = parts[0].strip()
@@ -51,7 +53,7 @@ async def query_command(update: Update, context):
     await update.message.reply_text("Searching...")
     async with httpx.AsyncClient(timeout=30) as client:
         try:
-            payload = {"question": question, "top_k": 5}
+            payload = {"question": question, "top_k": 5, "user_id": user_id}
             if source_filter:
                 payload["source_filter"] = source_filter
 
@@ -66,19 +68,20 @@ async def query_command(update: Update, context):
                 await update.message.reply_text(data["answer"])
         except Exception as e:
             await update.message.reply_text(f"Error: {str(e)}")
+
 async def handle_text(update: Update, context):
     user_id = update.effective_user.id
     if user_id in pending_ingest:
         source = pending_ingest.pop(user_id)
         text = update.message.text
         await update.message.reply_text("Ingesting your document...")
-        async with httpx.AsyncClient(timeout=30) as client:
+        async with httpx.AsyncClient(timeout=120) as client:
             try:
                 await client.post(
-                    f"{RAG_API_URL}/ingest",
+                    f"{RAG_API_URL}/ingest/sync",
                     json={"text": text, "source": source}
                 )
-                await update.message.reply_text(f"Ingestion started for source '{source}'.")
+                await update.message.reply_text(f"Ingestion complete for source '{source}'. You can now query it.")
             except Exception as e:
                 await update.message.reply_text(f"Error: {str(e)}")
     else:
@@ -86,7 +89,7 @@ async def handle_text(update: Update, context):
 
 async def handle_document(update: Update, context):
     user_id = update.effective_user.id
-    
+
     if user_id not in pending_ingest:
         await update.message.reply_text("Send /ingest <source_name> first before uploading a document.")
         return
@@ -120,9 +123,9 @@ async def handle_document(update: Update, context):
             await update.message.reply_text("Could not extract any text from the file. Try a different file.")
             return
 
-        await update.message.reply_text(f"Extracted {len(text.split())} words. Ingesting... this may take 30-60 seconds.")
+        await update.message.reply_text(f"Extracted {len(text.split())} words. Ingesting... this may take 3-5 minutes.")
 
-        async with httpx.AsyncClient(timeout=120) as client:
+        async with httpx.AsyncClient(timeout=600) as client:
             await client.post(
                 f"{RAG_API_URL}/ingest/sync",
                 json={"text": text, "source": source}
@@ -135,8 +138,8 @@ async def handle_document(update: Update, context):
 ptb.add_handler(CommandHandler("start", start))
 ptb.add_handler(CommandHandler("ingest", ingest_command))
 ptb.add_handler(CommandHandler("query", query_command))
-ptb.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
 ptb.add_handler(MessageHandler(filters.Document.ALL, handle_document))
+ptb.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
 
 @app.on_event("startup")
 async def startup():

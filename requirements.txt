@@ -9,3 +9,4 @@ langsmith
 langfuse
 langchain-openai
 datasets
+numpy
