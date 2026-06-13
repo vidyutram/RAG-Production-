@@ -93,18 +93,14 @@ async def retrieve_memories(user_id: str, question: str, top_k: int = 3) -> list
     await ensure_memory_collection()
     query_embedding = await get_embedding(question)
 
-    # topic gate — only retrieve memories from same topic cluster
-    topic = await detect_topic(question)
-
     results = await qdrant_client.query_points(
         collection_name=MEMORY_COLLECTION,
         query=query_embedding,
         query_filter=Filter(must=[
             FieldCondition(key="user_id", match=MatchValue(value=user_id)),
-            FieldCondition(key="topic", match=MatchValue(value=topic))
         ]),
         limit=top_k,
-        score_threshold=0.75,
+        score_threshold=0.5,
     )
 
     return [
