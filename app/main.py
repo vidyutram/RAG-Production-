@@ -40,7 +40,7 @@ async def query(request: QueryRequest):
     memories = []
     short_term_turns = []
     if request.user_id:
-        short_term_turns = get_short_term(request.user_id)
+        short_term_turns = await get_short_term(request.user_id)
         memories = await retrieve_memories(request.user_id, request.question)
 
     answer = await generate_answer(request.question, results, memories, short_term_turns)
