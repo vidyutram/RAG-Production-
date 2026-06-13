@@ -51,7 +51,7 @@ async def query_command(update: Update, context):
         source_filter = None
 
     await update.message.reply_text("Searching...")
-    async with httpx.AsyncClient(timeout=30) as client:
+    async with httpx.AsyncClient(timeout=60) as client:
         try:
             payload = {"question": question, "top_k": 5, "user_id": user_id}
             if source_filter:
@@ -63,11 +63,16 @@ async def query_command(update: Update, context):
             )
             if response.status_code == 404:
                 await update.message.reply_text("No relevant documents found. Try ingesting something first.")
+            elif response.status_code != 200:
+                await update.message.reply_text(f"API error {response.status_code}: {response.text}")
             else:
                 data = response.json()
-                await update.message.reply_text(data["answer"])
+                if "answer" not in data:
+                    await update.message.reply_text(f"Unexpected response: {data}")
+                else:
+                    await update.message.reply_text(data["answer"])
         except Exception as e:
-            await update.message.reply_text(f"Error: {str(e)}")
+            await update.message.reply_text(f"Error: {type(e).__name__}: {str(e)}")
 
 async def handle_text(update: Update, context):
     user_id = update.effective_user.id
