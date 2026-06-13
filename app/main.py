@@ -64,9 +64,8 @@ async def query_stream(request: QueryRequest):
     short_term_turns = []
     memories = []
     if request.user_id:
-        short_term_turns = get_short_term(request.user_id)
-        memories = await retrieve_memories(request.user_id, request.question)
-
+        await store_short_term(request.user_id, request.question, answer)
+        asyncio.create_task(store_memory(request.user_id, request.question, answer, "general"))
     return StreamingResponse(
         generate_answer_streaming(request.question, results, memories, short_term_turns),
         media_type="text/event-stream"

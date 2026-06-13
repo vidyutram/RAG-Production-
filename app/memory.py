@@ -5,15 +5,47 @@ from qdrant_client.models import Distance, VectorParams, PointStruct, Filter, Fi
 from app.config import settings
 from app.utils import get_embedding
 import asyncio
-from collections import defaultdict, deque
 
-short_term = defaultdict(lambda: deque(maxlen=5))
+async def store_short_term(user_id: str, question: str, answer: str):
+    await ensure_memory_collection()
+    text = f"Q: {question}\nA: {answer}"
+    embedding = await get_embedding(text)
+    await qdrant_client.upsert(
+        collection_name=MEMORY_COLLECTION,
+        points=[
+            PointStruct(
+                id=str(uuid.uuid4()),
+                vector=embedding,
+                payload={
+                    "user_id": user_id,
+                    "question": question,
+                    "answer": answer,
+                    "topic": "short_term",
+                    "timestamp": datetime.utcnow().isoformat()
+                }
+            )
+        ]
+    )
 
-def store_short_term(user_id: str, question: str, answer: str):
-    short_term[user_id].append({"question": question, "answer": answer})
-
-def get_short_term(user_id: str) -> list[dict]:
-    return list(short_term[user_id])
+async def get_short_term(user_id: str, top_k: int = 5) -> list[dict]:
+    await ensure_memory_collection()
+    results = await qdrant_client.scroll(
+        collection_name=MEMORY_COLLECTION,
+        scroll_filter=Filter(must=[
+            FieldCondition(key="user_id", match=MatchValue(value=user_id)),
+            FieldCondition(key="topic", match=MatchValue(value="short_term"))
+        ]),
+        limit=50,
+        with_payload=True,
+        with_vectors=False
+    )
+    points = results[0]
+    sorted_points = sorted(points, key=lambda p: p.payload["timestamp"], reverse=True)[:top_k]
+    sorted_points = sorted(sorted_points, key=lambda p: p.payload["timestamp"])
+    return [
+        {"question": p.payload["question"], "answer": p.payload["answer"]}
+        for p in sorted_points
+    ]
 
 MEMORY_COLLECTION = "user_memory"
 MEMORY_DIM = 768
