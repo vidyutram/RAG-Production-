@@ -70,20 +70,22 @@ async def store_memory(user_id: str, question: str, answer: str, topic: str):
 
 async def detect_topic(question: str) -> str:
     topics = ["magic", "characters", "plot", "places", "general"]
-    topic_embeddings = await asyncio.gather(*[get_embedding(t) for t in topics])
     query_embedding = await get_embedding(question)
-
+    
+    import numpy as np
+    query_vec = np.array(query_embedding)
+    
     best_topic = "general"
     best_score = -1
 
-    import numpy as np
-    query_vec = np.array(query_embedding)
-    for i, topic_vec in enumerate(topic_embeddings):
-        score = float(np.dot(query_vec, np.array(topic_vec)) /
+    for topic in topics:
+        topic_embedding = await get_embedding(topic)
+        topic_vec = np.array(topic_embedding)
+        score = float(np.dot(query_vec, topic_vec) /
                      (np.linalg.norm(query_vec) * np.linalg.norm(topic_vec)))
         if score > best_score:
             best_score = score
-            best_topic = topics[i]
+            best_topic = topic
 
     return best_topic
 
