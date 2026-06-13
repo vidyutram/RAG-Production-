@@ -7,6 +7,7 @@ from app.generation import generate_answer, generate_answer_streaming
 from app.memory import retrieve_memories, store_memory
 import logging
 import asyncio
+from app.memory import retrieve_memories, store_memory, store_short_term, get_short_term
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -66,3 +67,27 @@ async def query_stream(request: QueryRequest):
         generate_answer_streaming(request.question, results, memories),
         media_type="text/event-stream"
     )
+
+@app.post("/query")
+async def query(request: QueryRequest):
+    results = await retrieve_chunks(
+        question=request.question,
+        top_k=request.top_k,
+        source_filter=request.source_filter
+    )
+    if not results:
+        raise HTTPException(status_code=404, detail="No results found")
+
+    memories = []
+    short_term_turns = []
+    if request.user_id:
+        short_term_turns = get_short_term(request.user_id)
+        memories = await retrieve_memories(request.user_id, request.question)
+
+    answer = await generate_answer(request.question, results, memories, short_term_turns)
+
+    if request.user_id:
+        store_short_term(request.user_id, request.question, answer)
+        asyncio.create_task(store_memory(request.user_id, request.question, answer, "general"))
+
+    return QueryResponse(question=request.question, chunks_used=results, answer=answer)

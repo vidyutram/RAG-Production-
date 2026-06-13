@@ -5,6 +5,15 @@ from qdrant_client.models import Distance, VectorParams, PointStruct, Filter, Fi
 from app.config import settings
 from app.utils import get_embedding
 import asyncio
+from collections import defaultdict, deque
+
+short_term = defaultdict(lambda: deque(maxlen=5))
+
+def store_short_term(user_id: str, question: str, answer: str):
+    short_term[user_id].append({"question": question, "answer": answer})
+
+def get_short_term(user_id: str) -> list[dict]:
+    return list(short_term[user_id])
 
 MEMORY_COLLECTION = "user_memory"
 MEMORY_DIM = 768
