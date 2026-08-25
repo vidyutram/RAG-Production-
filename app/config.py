@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     collection_name: str = "documents"
     embedding_model: str = "jina-embeddings-v2-base-en"
     embedding_dim: int = 768
-    chat_model: str = "llama-3.1-8b-instant"
+    chat_model: str = "openai/gpt-oss-20b"
     chunk_size: int = 512
     chunk_overlap: int = 50
     retrieval_top_k: int = 5
