@@ -7,6 +7,13 @@ import docx
 from fastapi import FastAPI, Request
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s"
+)
+logger = logging.getLogger(__name__)
 
 RAG_API_URL = os.environ["RAG_API_URL"]
 TELEGRAM_BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
@@ -64,6 +71,7 @@ async def query_command(update: Update, context):
             if response.status_code == 404:
                 await update.message.reply_text("No relevant documents found. Try ingesting something first.")
             elif response.status_code != 200:
+                print(f"RAG API responded: {response.status_code}, body: {response.text[:300]}")
                 await update.message.reply_text(f"API error {response.status_code}: {response.text}")
             else:
                 data = response.json()
@@ -159,9 +167,12 @@ async def shutdown():
 
 @app.post("/webhook")
 async def webhook(request: Request):
-    data = await request.json()
-    update = Update.de_json(data, ptb.bot)
-    await ptb.process_update(update)
+    try:
+        data = await request.json()
+        update = Update.de_json(data, ptb.bot)
+        await ptb.process_update(update)
+    except Exception:
+        logger.exception("Error processing update")
     return {"ok": True}
 
 @app.get("/health")
